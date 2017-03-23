@@ -1,2 +1,2 @@
-# incSoapMon
-Monitoring module for Incognito SOAP interface
+# PythonPrj-Template
+Project Template structure for python
