@@ -31,15 +31,28 @@ logging.getLogger('suds.transport').setLevel(logging.INFO)
 logging.getLogger('suds.xsd.schema').setLevel(logging.INFO)
 logging.getLogger('suds.wsdl').setLevel(logging.INFO)
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 
 
 # Globals
 authWSDL = 'http://localhost:8899/webservice/IncSecurity?wsdl'
 mainWSDL = 'http://localhost:8899/webservice/IncService?wsdl'
-
+# Login
 user = 'administrator'
 passwd = user
+# SOAP methods
+methods = ['getServerTime',
+           'getServerOperatingSystemInfo',
+           'getDetectedNetworkServices', '',
+           ]
+
+xml = """Content-type:text/xml\r\n
+        <?xml version="1.0"?><reply>
+            <hasError>{}</hasError>
+            <status>{}</status>
+         </reply>\n""".replace(' ', '')
+
+###############################################################################
 
 def main():
     """Main entry point for the script."""
@@ -59,12 +72,19 @@ def main():
         token = res['authorizationToken']['token']
         log.info('Token: ' + token)
         
+        # Create complex Data-type out of WSDL 
         authInfo = mainClient.factory.create('ns2:authorizationInfo')
         authInfo.authorizationToken.token = token
         log.debug(authInfo)
         
-        doSoapRequest(mainClient, authInfo, 'getServerOperatingSystemInfo')
-        
+        try: 
+            for method in methods:
+                doSoapRequest(mainClient, authInfo, method)
+            print(xml.format(False, 'STATUS_SUCCESS'))
+        except:
+            log.debug('Exception in SOAP request!')
+            print(xml.format(True, 'STATUS_ERROR'))
+            
         
     
 def doSoapRequest(client, authInfo, methodName):
@@ -75,10 +95,15 @@ def doSoapRequest(client, authInfo, methodName):
         return reply
     except WebFault as e:
         log.WARNING('Request error!')
-        print(e)
+        print(e)        
+        raise ValueError('Reply has ERROR')
+        return -1
+    except:
+        log.critical('ITs FUCKED!!!')
+        raise ValueError('Total fuckup')
         return -1
         
 
-
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
+    #sys.exit(main())
